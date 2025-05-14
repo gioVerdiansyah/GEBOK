@@ -48,4 +48,9 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     }
   }
+
+  @override
+  Future<void> loginAsGuest() async {
+    await _local.saveLoginType("guest");
+  }
 }

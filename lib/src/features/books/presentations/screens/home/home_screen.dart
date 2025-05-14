@@ -2,20 +2,19 @@ import 'package:animations/animations.dart';
 import 'package:book_shelf/src/core/di/injection.dart';
 import 'package:book_shelf/src/features/books/presentations/blocs/bloc/book_cubit.dart';
 import 'package:book_shelf/src/features/books/presentations/blocs/state/book_state.dart';
-import 'package:book_shelf/src/features/books/presentations/widgets/search_screen.dart';
-import 'package:book_shelf/src/features/books/presentations/widgets/skeleteon/book_horizontal_skeleton.dart'
-    show BookHorizontalSkeleton;
-import 'package:book_shelf/src/shared/constants/asset_constant.dart';
+import 'package:book_shelf/src/features/books/presentations/screens/home/pick_genre_screen.dart';
 import 'package:book_shelf/src/shared/constants/color_constant.dart';
 import 'package:book_shelf/src/shared/utils/book_query_handler.dart';
 import 'package:book_shelf/src/shared/utils/book_subject_maker.dart';
 import 'package:book_shelf/src/shared/utils/string_util.dart';
-import 'package:book_shelf/src/shared/widgets/others/dynamic_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../shared/widgets/loading/image_load.dart';
-import '../../widgets/skeleteon/book_horizontal_skeleton.dart';
+import '../../../domain/entities/simple_book_entity.dart';
+import '../../widgets/screen/book_detail_screen.dart';
+import '../../widgets/screen/search_screen.dart';
+import '../../widgets/skeletons/book_horizontal_skeleton.dart';
 
 class HomeScreen extends StatefulWidget {
   final ScrollController scrollController;
@@ -27,8 +26,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeView extends State<HomeScreen> {
+  DateTime? _lastBackPressed;
   late List<String> _subjects;
-  List<BookCubit> _bookCubits = [];
+  final List<BookCubit> _bookCubits = [];
 
   @override
   void initState() {
@@ -55,41 +55,32 @@ class _HomeView extends State<HomeScreen> {
     setState(() {});
   }
 
+  Future<bool> _onWillPop() async {
+    final now = DateTime.now();
+    if (_lastBackPressed == null || now.difference(_lastBackPressed!) > Duration(seconds: 2)) {
+      _lastBackPressed = now;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Tekan sekali lagi untuk keluar'), duration: Duration(seconds: 2)));
+      return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: DynamicAppBar(
-        backgroundColor: ColorConstant.secondary,
-        title: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Image.asset(AssetConstant.appLogo, width: 30),
-            const SizedBox(width: 8),
-            Text("GEBOK", style: TextStyle(color: ColorConstant.primary, fontWeight: FontWeight.bold, fontSize: 18)),
-          ],
-        ),
-        trailingWidgets: [
-          OpenContainer(
-            transitionType: ContainerTransitionType.fadeThrough,
-            // .fade, .fadeThrough, .fadeScale
-            transitionDuration: Duration(milliseconds: 600),
-            closedElevation: 0,
-            closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            closedBuilder: (context, openContainer) {
-              return IconButton(icon: const Icon(Icons.search, color: ColorConstant.gray), onPressed: openContainer);
-            },
-            openBuilder: (context, _) => SearchScreen(),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        child: SingleChildScrollView(
-          controller: widget.scrollController,
-          padding: const EdgeInsets.only(top: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [_exploreApp(), const SizedBox(height: 16), _buildRecommendationBooks()],
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        body: RefreshIndicator(
+          onRefresh: _onRefresh,
+          child: SingleChildScrollView(
+            controller: widget.scrollController,
+            padding: const EdgeInsets.only(top: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [_exploreApp(), const SizedBox(height: 16), _buildRecommendationBooks()],
+            ),
           ),
         ),
       ),
@@ -98,11 +89,27 @@ class _HomeView extends State<HomeScreen> {
 
   Widget _exploreApp() {
     final List<Map<String, dynamic>> genres = [
-      {"icon": Icons.emoji_emotions, "label": "Genre"},
-      {"icon": Icons.hotel_class, "label": "Popular"},
-      {"icon": Icons.book, "label": "Baru"},
-      {"icon": Icons.favorite, "label": "Romantis"},
-      {"icon": Icons.menu_book, "label": "Comic"},
+      {"icon": Icons.emoji_emotions, "label": "Genre", "ontab": PickGenreScreen()},
+      {
+        "icon": Icons.hotel_class,
+        "label": "Popular",
+        "ontab": SearchScreen(titleSearch: "Popular", query: BookQuery(generic: "bestseller", orderBy: "relevance")),
+      },
+      {
+        "icon": Icons.book,
+        "label": "Baru",
+        "ontab": SearchScreen(titleSearch: "Popular", query: BookQuery(generic: "New", orderBy: "newest")),
+      },
+      {
+        "icon": Icons.favorite,
+        "label": "Romantis",
+        "ontab": SearchScreen(titleSearch: "Popular", query: BookQuery(generic: "romance")),
+      },
+      {
+        "icon": Icons.menu_book,
+        "label": "Comic",
+        "ontab": SearchScreen(titleSearch: "Popular", query: BookQuery(generic: "comic")),
+      },
     ];
 
     return Column(
@@ -127,18 +134,28 @@ class _HomeView extends State<HomeScreen> {
                   border: Border.all(color: ColorConstant.gray),
                   borderRadius: const BorderRadius.all(Radius.circular(5)),
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: const BorderRadius.all(Radius.circular(5)),
-                    onTap: () {},
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Row(
-                        children: [Icon(genre["icon"] as IconData), const SizedBox(width: 4), Text(genre["label"])],
+                child: OpenContainer(
+                  transitionType: ContainerTransitionType.fadeThrough,
+                  transitionDuration: const Duration(milliseconds: 500),
+                  openBuilder: (context, _) => genre["ontab"],
+                  closedElevation: 0,
+                  closedColor: Colors.transparent,
+                  closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  closedBuilder: (context, openContainer) {
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: const BorderRadius.all(Radius.circular(5)),
+                        onTap: openContainer,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Row(
+                            children: [Icon(genre["icon"] as IconData), const SizedBox(width: 4), Text(genre["label"])],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               );
             },
@@ -153,7 +170,7 @@ class _HomeView extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children:
           _subjects.map((subject) {
-            final query = BookQuery(subject: subject, filterBy: "paid-ebooks");
+            final query = BookQuery(subject: subject);
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 24.0),
@@ -190,80 +207,7 @@ class _HomeView extends State<HomeScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children:
-                                    state.listBooks.books.map((item) {
-                                      return Padding(
-                                        padding: const EdgeInsets.only(right: 16.0),
-                                        child: SizedBox(
-                                          width: 140,
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              ClipRRect(
-                                                borderRadius: BorderRadius.circular(8),
-                                                child: shimmerImage(
-                                                    item.thumbnail,
-                                                  width: 140,
-                                                  height: 190,
-                                                )
-                                                // FadeInImage.assetNetwork(
-                                                //   placeholder: AssetConstant.loading,
-                                                //   image: item.thumbnail,
-                                                //   width: 140,
-                                                //   height: 190,
-                                                //   fit: BoxFit.cover,
-                                                //   imageErrorBuilder: (context, error, stackTrace) {
-                                                //     return Container(
-                                                //       width: 120,
-                                                //       height: 180,
-                                                //       color: Colors.grey[300],
-                                                //       child: const Center(child: Icon(Icons.broken_image, size: 40)),
-                                                //     );
-                                                //   },
-                                                // ),
-                                              ),
-                                              const SizedBox(height: 8),
-                                              Text(
-                                                item.title,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                              ),
-                                              Row(
-                                                children: [
-                                                  ...[
-                                                    if (item.rating != null && item.discountPrice == null) ...[
-                                                      const Icon(Icons.star, color: Colors.amber, size: 14),
-                                                      const SizedBox(width: 2),
-                                                      Text(item.rating!.toString(), style: const TextStyle(fontSize: 12)),
-                                                      const SizedBox(width: 8),
-                                                    ],
-                                                  ],
-                                                  ...[
-                                                    if (item.discountPrice != null) ...[
-                                                      Text(
-                                                        "${item.currencyCode} ${formatNumToIdr(item.discountPrice!)}",
-                                                        style: TextStyle(
-                                                          decoration: TextDecoration.lineThrough,
-                                                          fontSize: 12,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(width: 4),
-                                                    ],
-                                                  ],
-                                                  if (item.originalPrice != null)
-                                                    Text(
-                                                      "${item.currencyCode} ${formatNumToIdr(item.originalPrice!)}",
-                                                      style: const TextStyle(fontSize: 12),
-                                                    ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
+                                children: state.listBooks.books.map((item) => _buildBook(context, item)).toList(),
                               ),
                             );
                           },
@@ -275,6 +219,73 @@ class _HomeView extends State<HomeScreen> {
               ),
             );
           }).toList(),
+    );
+  }
+
+  Widget _buildBook(BuildContext context, SimpleBookEntity item) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 16.0),
+      child: SizedBox(
+        width: 140,
+        child: OpenContainer(
+          transitionType: ContainerTransitionType.fadeThrough,
+          transitionDuration: const Duration(milliseconds: 500),
+          openBuilder: (context, _) => BookDetailScreen(bookId: item.id),
+          closedElevation: 0,
+          closedColor: Colors.transparent,
+          closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          closedBuilder: (context, openContainer) {
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: openContainer,
+                borderRadius: BorderRadius.circular(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: shimmerImage(item.thumbnail, width: 140, height: 190),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      item.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                    Wrap(
+                      spacing: 4, // jarak horizontal antar elemen
+                      runSpacing: 2, // jarak vertikal jika turun ke bawah
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        if (item.rating != null && item.discountPrice == null) ...[
+                          const Icon(Icons.star, color: Colors.amber, size: 14),
+                          Text(item.rating!.toString(), style: const TextStyle(fontSize: 12)),
+                        ],
+                        if (item.originalPrice != null)
+                          Text(
+                            "${item.currencyCode} ${formatNumToIdr(item.originalPrice!)}",
+                            style: TextStyle(
+                              fontSize: 12,
+                              decoration: item.discountPrice != null ? TextDecoration.lineThrough : null,
+                            ),
+                          ),
+                        if (item.discountPrice != null)
+                          Text(
+                            "${item.currencyCode} ${formatNumToIdr(item.discountPrice!)}",
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }

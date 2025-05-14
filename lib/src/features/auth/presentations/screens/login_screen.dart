@@ -1,13 +1,15 @@
 import 'package:book_shelf/src/core/di/injection.dart';
-import 'package:book_shelf/src/features/auth/domain/entities/auth_entity.dart';
 import 'package:book_shelf/src/features/auth/presentations/blocs/bloc/auth_cubit.dart';
 import 'package:book_shelf/src/features/auth/presentations/blocs/state/auth_state.dart';
-import 'package:book_shelf/src/features/auth/presentations/screens/dashboard_screen.dart';
+import 'package:book_shelf/src/features/auth/presentations/screens/dashboard/guest_dashboard_screen.dart';
 import 'package:book_shelf/src/shared/constants/asset_constant.dart';
 import 'package:book_shelf/src/shared/constants/color_constant.dart';
 import 'package:book_shelf/src/shared/widgets/notification/alert_notification.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:page_transition/page_transition.dart';
+
+import 'dashboard/user_dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -43,7 +45,7 @@ class _LoginView extends State<LoginScreen> {
             listener: (context, state) {
               if (state.api.isSuccess) {
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => DashboardScreen(user: state.user)),
+                  MaterialPageRoute(builder: (_) => UserDashboardScreen(user: state.user)),
                   (route) => false,
                 );
               } else if (state.api.error != null) {
@@ -108,8 +110,16 @@ class _LoginView extends State<LoginScreen> {
                 _buildLoginButton(
                   icon: const Icon(Icons.person_outline, size: 24, color: Colors.black),
                   label: "Masuk dengan guest",
-                  onPressed: () {
-                    // Handle guest login
+                  onPressed: () async {
+                    await context.read<AuthCubit>().loginAsGuest();
+                    Navigator.pushReplacement(
+                      context,
+                      PageTransition(
+                        type: PageTransitionType.bottomToTop,
+                        duration: Duration(milliseconds: 500),
+                        child: GuestDashboardScreen(),
+                      ),
+                    );
                   },
                 ),
               ],

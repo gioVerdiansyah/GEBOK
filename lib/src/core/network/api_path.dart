@@ -5,7 +5,4 @@ class ApiPath {
 
   // Books
   static const String volumes = "volumes";
-  static const String books =
-      "volumes?fields=items(id,volumeInfo/title,volumeInfo/description, volumeInfo/averageRating, volumeInfo/authors, "
-      "volumeInfo/imageLinks/thumbnail, saleInfo/listPrice/amount, saleInfo/listPrice/currencyCode)";
 }

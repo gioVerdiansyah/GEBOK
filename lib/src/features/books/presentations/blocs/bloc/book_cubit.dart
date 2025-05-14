@@ -7,18 +7,11 @@ import 'package:book_shelf/src/features/books/presentations/blocs/state/book_sta
 import 'package:book_shelf/src/shared/state/api_state.dart';
 import 'package:book_shelf/src/shared/utils/book_query_handler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 class BookCubit extends Cubit<BookState> {
   final BookRepository repo;
-  late final PagingController<int, SimpleBookEntity> pagingController;
 
-  BookCubit(this.repo) : super(BookState()) {
-    pagingController = PagingController<int, SimpleBookEntity>(
-      fetchPage: _fetchPagination,
-      getNextPageKey: _getNextPageKey,
-    );
-  }
+  BookCubit(this.repo) : super(BookState());
 
   Future<void> getBooks(BookQuery query) async {
     try {
@@ -34,25 +27,92 @@ class BookCubit extends Cubit<BookState> {
     }
   }
 
-  // Pagination section
-  void setQuery(BookQuery query) {
-    state.copyWith(query: query);
-  }
-  Future<List<SimpleBookEntity>> _fetchPagination(int pageKey) async {
+  Future<void> getBook(String id) async {
     try {
-      final results = await repo.getBooks(state.query ?? BookQuery());
-      return results.books;
-    } catch (e) {
-      rethrow;
+      emit(state.copyWith(api: state.api.loading()));
+
+      final result = await repo.getBook(id);
+
+      emit(state.copyWith(api: state.api.success(), book: result));
+    } on ApiException catch (e) {
+      emit(state.copyWith(api: state.api.errorException(e)));
+    } on RepositoryException catch (e) {
+      emit(state.copyWith(api: state.api.errorException(e)));
     }
   }
 
-  int? _getNextPageKey(PagingState<int, SimpleBookEntity> state) {
-    final lastPageItemCount = state.items?.length ?? 0;
+  void setOnSearch(bool onSearch) {
+    final loadingState = state.pagingState.copyWith(isLoading: onSearch, error: null);
+    emit(state.copyWith(onSearch: onSearch, pagingState: loadingState));
+  }
 
-    if (lastPageItemCount < 10) return null;
+  void setWaitingSubmit(bool isWaiting) {
+    emit(state.copyWith(isWaitingSubmit: isWaiting));
+  }
 
-    final lastKey = state.keys?.lastOrNull ?? 0;
-    return lastKey + 1;
+  // PAGINATION SECTION
+  void setQuery(BookQuery? query) {
+    emit(state.copyWith(query: query));
+  }
+
+  Future<void> resetPagination() async {
+    final updatedPagingState = state.pagingState.copyWith(
+      pages: null,
+      keys: null,
+      hasNextPage: true,
+      isLoading: true,
+      error: null,
+    );
+    emit(state.copyWith(pagingState: updatedPagingState));
+  }
+
+  Future<List<SimpleBookEntity>> fetchPagination(int pageKey) async {
+    try {
+      // Set loading state first
+      final loadingState = state.pagingState.copyWith(isLoading: true, error: null);
+      emit(state.copyWith(pagingState: loadingState));
+
+      // Calculate the correct key based on existing state
+      final int newKey = (state.pagingState.keys?.isEmpty ?? true) ? 1 : (state.pagingState.keys?.last ?? 0) + 1;
+
+      // Create query with proper startIndex
+      final newQuery = BookQuery(
+        generic: state.query?.generic,
+        filterBy: state.query?.filterBy,
+        orderBy: state.query?.orderBy,
+        langRestrict: state.query?.langRestrict,
+        startIndex: (newKey - 1) * 10,
+      );
+
+      final results = await repo.getBooks(newQuery);
+      final newItems = results.books;
+
+      // Update pagination state with new results
+      final updatedPagingState = state.pagingState.copyWith(
+        pages: [...?state.pagingState.pages, newItems],
+        keys: [...?state.pagingState.keys, newKey],
+        hasNextPage: newItems.isNotEmpty,
+        isLoading: false,
+      );
+
+      emit(state.copyWith(pagingState: updatedPagingState));
+
+      return results.books;
+    } on ApiException catch (e) {
+      final errorState = state.pagingState.copyWith(error: e.message, isLoading: false);
+      emit(state.copyWith(pagingState: errorState));
+
+      rethrow;
+    } on RepositoryException catch (e) {
+      final errorState = state.pagingState.copyWith(error: e.message, isLoading: false);
+      emit(state.copyWith(pagingState: errorState));
+
+      rethrow;
+    } catch (e) {
+      final errorState = state.pagingState.copyWith(error: e.toString(), isLoading: false);
+      emit(state.copyWith(pagingState: errorState));
+
+      rethrow;
+    }
   }
 }

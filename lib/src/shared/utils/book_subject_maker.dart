@@ -1,7 +1,7 @@
 import 'dart:math';
 
 class BookSubjectPicker {
-  final List<String> subjects = [
+  static final List<String> subjects = [
     'Arts',
     'Biographies & Memoirs',
     'Business & Economics',

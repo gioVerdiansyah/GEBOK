@@ -11,6 +11,10 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit(this.repo) : super(AuthState());
 
+  Future<void> loginAsGuest() async {
+    repo.loginAsGuest();
+  }
+
   Future<void> loginWithGoogle() async {
     try {
       emit(state.copyWith(api: state.api.loading()));

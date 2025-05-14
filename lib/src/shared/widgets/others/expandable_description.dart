@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class ExpandableContent extends StatefulWidget {
+class ExpandableDescription extends StatefulWidget {
   final Widget child;
   final double collapsedHeight;
   final double? expandedHeight;
@@ -10,7 +10,7 @@ class ExpandableContent extends StatefulWidget {
   final Duration animationDuration;
   final Color? backgroundColor;
 
-  const ExpandableContent({
+  const ExpandableDescription({
     Key? key,
     required this.child,
     required this.collapsedHeight,
@@ -23,10 +23,10 @@ class ExpandableContent extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<ExpandableContent> createState() => _ExpandableContentState();
+  State<ExpandableDescription> createState() => _ExpandableDescriptionState();
 }
 
-class _ExpandableContentState extends State<ExpandableContent>
+class _ExpandableDescriptionState extends State<ExpandableDescription>
     with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late AnimationController _animationController;

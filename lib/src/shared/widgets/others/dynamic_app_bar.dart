@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../constants/color_constant.dart';
+
 class DynamicAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? title;
+  final Alignment? titleAlignment;
   final Widget? leadingWidget;
   final List<Widget>? trailingWidgets;
   final VoidCallback? onBackPressed;
@@ -17,6 +20,7 @@ class DynamicAppBar extends StatelessWidget implements PreferredSizeWidget {
   const DynamicAppBar({
     Key? key,
     this.title,
+    this.titleAlignment = Alignment.center,
     this.leadingWidget,
     this.trailingWidgets,
     this.onBackPressed,
@@ -71,11 +75,11 @@ class DynamicAppBar extends StatelessWidget implements PreferredSizeWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildLeading(context) != null
-                ? SizedBox(width: 56, child: _buildLeading(context))
+                ? SizedBox(child: _buildLeading(context))
                 : const SizedBox(width: 8),
             Expanded(
               child: Container(
-                alignment: Alignment.center,
+                alignment: titleAlignment,
                 child: title,
               ),
             ),
@@ -93,7 +97,7 @@ class DynamicAppBar extends StatelessWidget implements PreferredSizeWidget {
       return leadingWidget;
     } else if (showBackButton) {
       return IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        icon: const Icon(Icons.arrow_back, color: ColorConstant.black),
         onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
       );
     }

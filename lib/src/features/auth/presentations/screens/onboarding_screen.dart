@@ -4,7 +4,6 @@ import 'package:book_shelf/src/core/system/auth_local.dart';
 import 'package:book_shelf/src/features/auth/domain/entities/auth_entity.dart';
 import 'package:book_shelf/src/features/auth/presentations/blocs/bloc/auth_cubit.dart';
 import 'package:book_shelf/src/features/auth/presentations/screens/login_screen.dart';
-import 'package:book_shelf/src/features/auth/presentations/screens/dashboard_screen.dart';
 import 'package:book_shelf/src/shared/constants/color_constant.dart';
 import 'package:book_shelf/src/shared/widgets/notification/alert_notification.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +12,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:page_transition/page_transition.dart';
 
 import '../../../../shared/constants/asset_constant.dart';
+import 'dashboard/guest_dashboard_screen.dart';
+import 'dashboard/user_dashboard_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -47,22 +48,21 @@ class _DashboardView extends State<OnboardingScreen> {
 
     try {
       final token = _authLocal.getToken();
+
       if (token == null) {
         await Future.delayed(const Duration(seconds: 2));
         if (!mounted) return;
 
+        if (_authLocal.getLoginType() != null && _authLocal.getLoginType() == "guest") return _navigateToGuestDashboard();
         _navigateToLogin();
         return;
       }
 
       await _authCubit.checkToken(token);
+
       if (!mounted) return;
 
-      if (_authCubit.state.user != null) {
-        _navigateToDashboard(_authCubit.state.user!);
-      } else {
-        _navigateToLogin();
-      }
+      _navigateToUserDashboard(_authCubit.state.user);
     } on RepositoryException catch (e) {
       if (mounted) {
         AlertNotification.warning(context, e.message);
@@ -87,13 +87,24 @@ class _DashboardView extends State<OnboardingScreen> {
     );
   }
 
-  void _navigateToDashboard(AuthEntity userInfo) {
+  void _navigateToUserDashboard(AuthEntity userInfo) {
     Navigator.pushReplacement(
       context,
       PageTransition(
         type: PageTransitionType.bottomToTop,
         duration: const Duration(milliseconds: 500),
-        child: DashboardScreen(user: userInfo),
+        child: UserDashboardScreen(user: userInfo),
+      ),
+    );
+  }
+
+  void _navigateToGuestDashboard() {
+    Navigator.pushReplacement(
+      context,
+      PageTransition(
+        type: PageTransitionType.bottomToTop,
+        duration: const Duration(milliseconds: 500),
+        child: GuestDashboardScreen(),
       ),
     );
   }

@@ -27,17 +27,24 @@ class ApiClient {
 
   ApiClient({this.onUnauthorized}) {
     _box = GetStorage();
+    final token = _box.read<String?>(StorageKeyConstant.tokenKey);
+
+    final headers = {'Accept': 'application/json'};
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
 
     _dio = Dio(
       BaseOptions(
         connectTimeout: const Duration(seconds: ApiConfig.connectTimeout),
         receiveTimeout: const Duration(seconds: ApiConfig.connectTimeout),
-        headers: {'Accept': 'application/json', 'Authorization': 'Bearer ${ApiConfig.apiKey}'},
+        headers: headers,
         validateStatus: (status) {
           return status != null && (status >= 200 && status < 300);
         },
       ),
     );
+
 
     _dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
 
@@ -47,7 +54,6 @@ class ApiClient {
           final unusedAuth = options.extra['unusedAuth'] as bool? ?? false;
 
           if (!unusedAuth) {
-            final token = _box.read<String?>(StorageKeyConstant.tokenKey);
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
             }
@@ -271,7 +277,7 @@ class ApiClient {
           case 404:
           case 500:
             return ApiException(
-              error.response?.data?['message'],
+              error.response?.data?['message'] ?? error.response?.data?['error']?['message'],
               // requestId: error.response?.data?['data']?["request_id"],
               source: "ApiClient",
               details: "Error while fetching api at \n${apiMethod.toUpperCase()} : $path",

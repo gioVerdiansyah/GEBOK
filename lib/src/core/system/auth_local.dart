@@ -21,4 +21,5 @@ class AuthLocal {
   }
 
   String? getToken() => _storage.read(StorageKeyConstant.tokenKey);
+  String? getLoginType() => _storage.read(StorageKeyConstant.loginType);
 }

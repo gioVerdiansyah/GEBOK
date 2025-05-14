@@ -8,17 +8,18 @@ class BookEntity {
   final String description;
   final List<IndustryIdentifier> industryIdentifiers;
   final int pageCount;
-  final String printType;
+  final List<String> genre;
   final List<String> categories;
-  final String maturityRating;
-  final bool allowAnonLogging;
-  final String contentVersion;
   final ImageLinks imageLinks;
+  final double? averageRating;
+  final int? ratingsCount;
   final String language;
   final String previewLink;
   final String infoLink;
   final String canonicalVolumeLink;
-  final String saleability;
+  final int? discountPrice;
+  final int? originalPrice;
+  final String? currencyCode;
   final bool isEbook;
   final bool embeddable;
   final bool publicDomain;
@@ -39,17 +40,18 @@ class BookEntity {
     required this.description,
     required this.industryIdentifiers,
     required this.pageCount,
-    required this.printType,
     required this.categories,
-    required this.maturityRating,
-    required this.allowAnonLogging,
-    required this.contentVersion,
     required this.imageLinks,
+    required this.averageRating,
+    required this.ratingsCount,
     required this.language,
+    required this.genre,
     required this.previewLink,
     required this.infoLink,
     required this.canonicalVolumeLink,
-    required this.saleability,
+    this.discountPrice,
+    this.originalPrice,
+    this.currencyCode,
     required this.isEbook,
     required this.embeddable,
     required this.publicDomain,
@@ -61,45 +63,41 @@ class BookEntity {
     required this.quoteSharingAllowed,
   });
 
-  factory BookEntity.fromJson(Map<String, dynamic> json) {
-    final volumeInfo = json['volumeInfo'];
-    final saleInfo = json['saleInfo'];
-    final accessInfo = json['accessInfo'];
-
+  factory BookEntity.empty() {
     return BookEntity(
-      id: json['id'],
-      title: volumeInfo['title'],
-      subtitle: volumeInfo['subtitle'],
-      authors: List<String>.from(volumeInfo['authors'] ?? []),
-      publisher: volumeInfo['publisher'] ?? '',
-      publishedDate: volumeInfo['publishedDate'] ?? '',
-      description: volumeInfo['description'] ?? '',
-      industryIdentifiers: (volumeInfo['industryIdentifiers'] as List)
-          .map((e) => IndustryIdentifier.fromJson(e))
-          .toList(),
-      pageCount: volumeInfo['pageCount'] ?? 0,
-      printType: volumeInfo['printType'] ?? '',
-      categories: List<String>.from(volumeInfo['categories'] ?? []),
-      maturityRating: volumeInfo['maturityRating'] ?? '',
-      allowAnonLogging: volumeInfo['allowAnonLogging'] ?? false,
-      contentVersion: volumeInfo['contentVersion'] ?? '',
-      imageLinks: ImageLinks.fromJson(volumeInfo['imageLinks']),
-      language: volumeInfo['language'] ?? '',
-      previewLink: volumeInfo['previewLink'] ?? '',
-      infoLink: volumeInfo['infoLink'] ?? '',
-      canonicalVolumeLink: volumeInfo['canonicalVolumeLink'] ?? '',
-      saleability: saleInfo['saleability'] ?? '',
-      isEbook: saleInfo['isEbook'] ?? false,
-      embeddable: accessInfo['embeddable'] ?? false,
-      publicDomain: accessInfo['publicDomain'] ?? false,
-      epubAvailable: accessInfo['epub']['isAvailable'] ?? false,
-      pdfAvailable: accessInfo['pdf']['isAvailable'] ?? false,
-      pdfAcsTokenLink: accessInfo['pdf']['acsTokenLink'],
-      webReaderLink: accessInfo['webReaderLink'] ?? '',
-      accessViewStatus: accessInfo['accessViewStatus'] ?? '',
-      quoteSharingAllowed: accessInfo['quoteSharingAllowed'] ?? false,
+      id: '',
+      title: '',
+      subtitle: null,
+      authors: [],
+      publisher: '',
+      publishedDate: '',
+      description: '',
+      industryIdentifiers: [IndustryIdentifier.empty()],
+      pageCount: 0,
+      categories: [],
+      imageLinks: ImageLinks.empty(),
+      averageRating: null,
+      ratingsCount: null,
+      language: '',
+      genre: [],
+      previewLink: '',
+      infoLink: '',
+      canonicalVolumeLink: '',
+      discountPrice: null,
+      originalPrice: null,
+      currencyCode: null,
+      isEbook: false,
+      embeddable: false,
+      publicDomain: false,
+      epubAvailable: false,
+      pdfAvailable: false,
+      pdfAcsTokenLink: null,
+      webReaderLink: '',
+      accessViewStatus: '',
+      quoteSharingAllowed: false,
     );
   }
+
 }
 
 class IndustryIdentifier {
@@ -111,27 +109,27 @@ class IndustryIdentifier {
     required this.identifier,
   });
 
-  factory IndustryIdentifier.fromJson(Map<String, dynamic> json) {
+  factory IndustryIdentifier.empty() {
     return IndustryIdentifier(
-      type: json['type'],
-      identifier: json['identifier'],
+      type: '',
+      identifier: '',
     );
   }
 }
 
 class ImageLinks {
-  final String smallThumbnail;
   final String thumbnail;
+  final String largeImage;
 
   ImageLinks({
-    required this.smallThumbnail,
     required this.thumbnail,
+    required this.largeImage,
   });
 
-  factory ImageLinks.fromJson(Map<String, dynamic> json) {
+  factory ImageLinks.empty() {
     return ImageLinks(
-      smallThumbnail: json['smallThumbnail'] ?? '',
-      thumbnail: json['thumbnail'] ?? '',
+      thumbnail: '',
+      largeImage: '',
     );
   }
 }

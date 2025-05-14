@@ -1,23 +1,27 @@
+import 'package:animations/animations.dart';
 import 'package:book_shelf/src/features/auth/domain/entities/auth_entity.dart';
 import 'package:book_shelf/src/features/books/presentations/screens/home/home_screen.dart';
 import 'package:book_shelf/src/features/books/presentations/screens/library/library_screen.dart';
-import 'package:book_shelf/src/features/books/presentations/screens/shop/shop_screen.dart';
-import 'package:book_shelf/src/shared/constants/asset_constant.dart';
 import 'package:book_shelf/src/shared/constants/color_constant.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 
-class DashboardScreen extends StatefulWidget{
+import '../../../../../shared/constants/asset_constant.dart';
+import '../../../../../shared/widgets/others/dynamic_app_bar.dart';
+import '../../../../books/presentations/screens/favorite/favorite_screen.dart';
+import '../../../../books/presentations/widgets/screen/search_screen.dart';
+
+class UserDashboardScreen extends StatefulWidget{
   final AuthEntity user;
 
-  const DashboardScreen({super.key, required this.user});
+  const UserDashboardScreen({super.key, required this.user});
 
   @override
   State<StatefulWidget> createState() => _DashboardView();
 }
 
-class _DashboardView extends State<DashboardScreen> {
+class _DashboardView extends State<UserDashboardScreen> {
   late PersistentTabController _controller;
 
   final ScrollController _scrollControllerHome = ScrollController();
@@ -34,13 +38,61 @@ class _DashboardView extends State<DashboardScreen> {
     return [
       HomeScreen(scrollController: _scrollControllerHome,),
       LibraryScreen(scrollController: _scrollControllerLibrary,),
-      ShopScreen(scrollController: _scrollControllerShop,)
+      FavoriteScreen(scrollController: _scrollControllerShop,)
     ];
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: DynamicAppBar(
+        backgroundColor: ColorConstant.secondary,
+        title: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Image.asset(AssetConstant.appLogo, width: 30),
+            const SizedBox(width: 8),
+            Text("GEBOK", style: TextStyle(color: ColorConstant.primary, fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        trailingWidgets: [
+          OpenContainer(
+            transitionType: ContainerTransitionType.fadeThrough,
+            transitionDuration: Duration(milliseconds: 600),
+            closedElevation: 0,
+            closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            closedBuilder: (context, openContainer) {
+              return IconButton(
+                icon: const Icon(Icons.search, color: ColorConstant.gray),
+                onPressed: () {
+                  PersistentNavBarNavigator.pushNewScreen(
+                    context,
+                    screen: SearchScreen(),
+                    withNavBar: false,
+                    pageTransitionAnimation: PageTransitionAnimation.cupertino,
+                  );
+                },
+              );
+            },
+            openBuilder: (context, _) => Container(),
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              print('Selected: $value');
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'edit',
+                child: Text('Edit'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'delete',
+                child: Text('Delete'),
+              ),
+            ],
+          )
+        ],
+      ),
       body: PersistentTabView(
         context,
         controller: _controller,
@@ -79,12 +131,6 @@ class _DashboardView extends State<DashboardScreen> {
         activeColorPrimary: CupertinoColors.activeBlue,
         inactiveColorPrimary: CupertinoColors.systemGrey,
         scrollController: _scrollControllerHome,
-        routeAndNavigatorSettings: RouteAndNavigatorSettings(
-          initialRoute: "/",
-          routes: {
-            // "/first": (final context) => const MainScreen2(),
-          },
-        ),
       ),
       PersistentBottomNavBarItem(
         icon: Icon(CupertinoIcons.book),
@@ -92,25 +138,13 @@ class _DashboardView extends State<DashboardScreen> {
         activeColorPrimary: CupertinoColors.activeBlue,
         inactiveColorPrimary: CupertinoColors.systemGrey,
         scrollController: _scrollControllerLibrary,
-        routeAndNavigatorSettings: RouteAndNavigatorSettings(
-          initialRoute: "/",
-          routes: {
-            // "/first": (final context) => const MainScreen2(),
-          },
-        ),
       ),
       PersistentBottomNavBarItem(
-        icon: Icon(CupertinoIcons.bag),
+        icon: Icon(Icons.favorite),
         title: ("Shop"),
         activeColorPrimary: CupertinoColors.activeBlue,
         inactiveColorPrimary: CupertinoColors.systemGrey,
         scrollController: _scrollControllerShop,
-        routeAndNavigatorSettings: RouteAndNavigatorSettings(
-          initialRoute: "/",
-          routes: {
-            // "/first": (final context) => const MainScreen2(),
-          },
-        ),
       ),
     ];
   }

@@ -9,7 +9,7 @@ class BookSkeleton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 16.0),
       child: SizedBox(
-        width: 140,
+        width: 160,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -18,8 +18,8 @@ class BookSkeleton extends StatelessWidget {
               baseColor: Colors.grey[300]!,
               highlightColor: Colors.grey[100]!,
               child: Container(
-                width: 120,
-                height: 180,
+                width: 140,
+                height: 186,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),

@@ -7,7 +7,7 @@ import 'package:book_shelf/src/features/books/domain/entities/books_entity.dart'
 import 'package:book_shelf/src/features/books/domain/repositories/book_repository.dart';
 import 'package:book_shelf/src/shared/utils/book_query_handler.dart';
 
-class BookRepositoryImpl implements BookRepository{
+class BookRepositoryImpl implements BookRepository {
   final BookApi _api;
   final AuthLocal _local;
 
@@ -15,13 +15,13 @@ class BookRepositoryImpl implements BookRepository{
 
   @override
   Future<BooksEntity> getBooks(BookQuery query) async {
-    try{
-      final res = await _api.getBooks(query);
+    try {
+      final res = await _api.getBooks(query, loginType: _local.getLoginType());
 
       return res.toEntity();
-    } on ApiException{
+    } on ApiException {
       rethrow;
-    } catch(e, stackTrace){
+    } catch (e, stackTrace) {
       throw RepositoryException(
         e.toString(),
         stackTrace: stackTrace,
@@ -32,8 +32,20 @@ class BookRepositoryImpl implements BookRepository{
   }
 
   @override
-  Future<BookEntity> getBook(String id) {
-    // TODO: implement getBook
-    throw UnimplementedError();
+  Future<BookEntity> getBook(String id) async {
+    try {
+      final res = await _api.getBook(id);
+
+      return res.toEntity();
+    } on ApiException {
+      rethrow;
+    } catch (e, stackTrace) {
+      throw RepositoryException(
+        e.toString(),
+        stackTrace: stackTrace,
+        source: "BookRepositoryImpl",
+        details: "May failed while get the book from Google Books API.",
+      );
+    }
   }
 }

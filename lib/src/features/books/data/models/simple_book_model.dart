@@ -1,6 +1,7 @@
 import 'package:book_shelf/src/features/books/domain/entities/simple_book_entity.dart';
 
 class SimpleBookModel {
+  final String id;
   final String title;
   final String author;
   final String thumbnail;
@@ -10,6 +11,7 @@ class SimpleBookModel {
   final double? rating;
 
   SimpleBookModel({
+    required this.id,
     required this.title,
     required this.author,
     required this.thumbnail,
@@ -26,6 +28,7 @@ class SimpleBookModel {
     final listPrice = saleInfo['listPrice'];
 
     return SimpleBookModel(
+      id: json['id'],
       title: volumeInfo['title'] ?? '',
       author: volumeInfo['authors']?[0] ?? '',
       thumbnail: volumeInfo['imageLinks']?['thumbnail'] ?? '',
@@ -38,6 +41,7 @@ class SimpleBookModel {
 
   SimpleBookEntity toEntity() {
     return SimpleBookEntity(
+      id: id,
       title: title,
       author: author,
       thumbnail: thumbnail,
