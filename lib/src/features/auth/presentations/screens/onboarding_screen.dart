@@ -33,7 +33,9 @@ class _DashboardView extends State<OnboardingScreen> {
     _getAppVersion();
 
     _authCubit = getIt<AuthCubit>();
-    _checkAuth();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuth();
+    });
   }
 
   Future<void> _getAppVersion() async {

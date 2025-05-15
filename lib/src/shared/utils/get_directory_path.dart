@@ -3,7 +3,7 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 
 Future<String> getDownloadDirectory() async {
-  final directory = Directory('/storage/emulated/0/Download/Simaster Jakon');
+  final directory = Directory('/storage/emulated/0/Download/Book_Shelf');
   if (!await directory.exists()) {
     await directory.create(recursive: true);
   }

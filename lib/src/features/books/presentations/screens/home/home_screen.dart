@@ -9,6 +9,7 @@ import 'package:book_shelf/src/shared/utils/book_subject_maker.dart';
 import 'package:book_shelf/src/shared/utils/string_util.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 
 import '../../../../../shared/widgets/loading/image_load.dart';
 import '../../../domain/entities/simple_book_entity.dart';
@@ -72,6 +73,7 @@ class _HomeView extends State<HomeScreen> {
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
+        backgroundColor: ColorConstant.secondary,
         body: RefreshIndicator(
           onRefresh: _onRefresh,
           child: SingleChildScrollView(
@@ -98,17 +100,17 @@ class _HomeView extends State<HomeScreen> {
       {
         "icon": Icons.book,
         "label": "Baru",
-        "ontab": SearchScreen(titleSearch: "Popular", query: BookQuery(generic: "New", orderBy: "newest")),
+        "ontab": SearchScreen(titleSearch: "Baru", query: BookQuery(generic: "New", orderBy: "newest")),
       },
       {
         "icon": Icons.favorite,
         "label": "Romantis",
-        "ontab": SearchScreen(titleSearch: "Popular", query: BookQuery(generic: "romance")),
+        "ontab": SearchScreen(titleSearch: "Romantis", query: BookQuery(generic: "romance")),
       },
       {
         "icon": Icons.menu_book,
-        "label": "Comic",
-        "ontab": SearchScreen(titleSearch: "Popular", query: BookQuery(generic: "comic")),
+        "label": "Komik",
+        "ontab": SearchScreen(titleSearch: "Komik", query: BookQuery(generic: "comic")),
       },
     ];
 
@@ -146,7 +148,17 @@ class _HomeView extends State<HomeScreen> {
                       color: Colors.transparent,
                       child: InkWell(
                         borderRadius: const BorderRadius.all(Radius.circular(5)),
-                        onTap: openContainer,
+                        onTap: () {
+                          // openContainer();
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            PersistentNavBarNavigator.pushNewScreen(
+                              context,
+                              screen: genre["ontab"],
+                              withNavBar: false,
+                              pageTransitionAnimation: PageTransitionAnimation.cupertino,
+                            );
+                          });
+                        },
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Row(
@@ -195,9 +207,28 @@ class _HomeView extends State<HomeScreen> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Text(subject, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                        Material(
+                          color: ColorConstant.secondary,
+                          child: InkWell(
+                            onTap: () {
+                              PersistentNavBarNavigator.pushNewScreen(
+                                context,
+                                screen: SearchScreen(titleSearch: subject, query: BookQuery(generic: subject, subject: subject)),
+                                withNavBar: false,
+                                pageTransitionAnimation: PageTransitionAnimation.cupertino,
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(subject, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                                  Icon(Icons.arrow_forward, color: ColorConstant.gray, size: 16),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 8),
                         LayoutBuilder(
@@ -238,7 +269,17 @@ class _HomeView extends State<HomeScreen> {
             return Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: openContainer,
+                onTap: () {
+                  // openContainer();
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    PersistentNavBarNavigator.pushNewScreen(
+                      context,
+                      screen: BookDetailScreen(bookId: item.id),
+                      withNavBar: false,
+                      pageTransitionAnimation: PageTransitionAnimation.cupertino,
+                    );
+                  });
+                },
                 borderRadius: BorderRadius.circular(8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,8 +297,8 @@ class _HomeView extends State<HomeScreen> {
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                     ),
                     Wrap(
-                      spacing: 4, // jarak horizontal antar elemen
-                      runSpacing: 2, // jarak vertikal jika turun ke bawah
+                      spacing: 4,
+                      runSpacing: 2,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         if (item.rating != null && item.discountPrice == null) ...[

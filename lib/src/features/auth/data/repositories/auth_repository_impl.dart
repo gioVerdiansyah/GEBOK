@@ -35,6 +35,28 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> logout() async {
+    try {
+      if(_local.getLoginType() == "google"){
+        final token = _local.getToken();
+        if(token == null) throw Exception("Token tidak ditemukan");
+        await _api.logout(_local.getToken()!);
+      }
+
+      await _local.clearAuthData();
+    } on ApiException {
+      rethrow;
+    } catch (e, stackTrace) {
+      throw RepositoryException(
+        e.toString(),
+        stackTrace: stackTrace,
+        source: "AuthRepositoryImpl",
+        details: "May failed while save auth token.",
+      );
+    }
+  }
+
+  @override
   Future<AuthEntity?> checkToken(String token) async {
     try {
       final AuthModel res = await _api.checkToken(token);

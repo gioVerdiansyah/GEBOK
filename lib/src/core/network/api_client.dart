@@ -13,7 +13,6 @@ import 'package:mime/mime.dart';
 class ApiClient {
   late final Dio _dio;
   final String baseUrl = ApiConfig.apiUrl;
-  late final GetStorage _box;
   static bool _initialized = false;
   final VoidCallback? onUnauthorized;
 
@@ -26,19 +25,11 @@ class ApiClient {
   }
 
   ApiClient({this.onUnauthorized}) {
-    _box = GetStorage();
-    final token = _box.read<String?>(StorageKeyConstant.tokenKey);
-
-    final headers = {'Accept': 'application/json'};
-    if (token != null && token.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $token';
-    }
-
     _dio = Dio(
       BaseOptions(
         connectTimeout: const Duration(seconds: ApiConfig.connectTimeout),
         receiveTimeout: const Duration(seconds: ApiConfig.connectTimeout),
-        headers: headers,
+        headers: {'Accept': 'application/json'},
         validateStatus: (status) {
           return status != null && (status >= 200 && status < 300);
         },
@@ -54,6 +45,7 @@ class ApiClient {
           final unusedAuth = options.extra['unusedAuth'] as bool? ?? false;
 
           if (!unusedAuth) {
+            final token = AuthLocal().getToken();
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
             }

@@ -15,6 +15,10 @@ class AuthCubit extends Cubit<AuthState> {
     repo.loginAsGuest();
   }
 
+  Future<void> logout() async {
+    repo.logout();
+  }
+
   Future<void> loginWithGoogle() async {
     try {
       emit(state.copyWith(api: state.api.loading()));

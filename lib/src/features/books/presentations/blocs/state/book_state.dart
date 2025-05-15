@@ -50,5 +50,6 @@ class BookState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [api, listBooks, pagingState, query, onSearch, pagingState, book];
+  List<Object?> get props => [api, listBooks, query, onSearch, isWaitingSubmit, pagingState, book];
+
 }

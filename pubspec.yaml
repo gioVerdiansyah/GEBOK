@@ -60,6 +60,15 @@ dependencies:
   equatable: ^2.0.7
   flutter_html: ^3.0.0
   share_plus: ^11.0.0
+  video_player: ^2.9.5
+  chewie: ^1.11.3
+  path_provider: ^2.1.5
+  image_cropper: ^9.1.0
+  form_builder_file_picker: ^5.0.0
+  image_picker: ^1.1.2
+  path: ^1.9.1
+  flutter_local_notifications: ^19.2.0
+  open_file: ^3.5.10
 
 dev_dependencies:
   flutter_test:

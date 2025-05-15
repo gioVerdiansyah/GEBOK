@@ -41,6 +41,35 @@ class BookCubit extends Cubit<BookState> {
     }
   }
 
+  Future<void> addBookToWishlist(String id) async {
+    try {
+      emit(state.copyWith(api: state.api.loading()));
+
+      await repo.addBookToWishlist(id);
+
+      emit(state.copyWith(api: state.api.success()));
+    } on ApiException catch (e) {
+      emit(state.copyWith(api: state.api.errorException(e)));
+    } on RepositoryException catch (e) {
+      emit(state.copyWith(api: state.api.errorException(e)));
+    }
+  }
+
+  Future<void> removeBookFromWishlist(String id) async {
+    try {
+      emit(state.copyWith(api: state.api.loading()));
+
+      await repo.removeBookFromWishlist(id);
+
+      emit(state.copyWith(api: state.api.success()));
+    } on ApiException catch (e) {
+      emit(state.copyWith(api: state.api.errorException(e)));
+    } on RepositoryException catch (e) {
+      emit(state.copyWith(api: state.api.errorException(e)));
+    }
+  }
+
+  // SIDE EFFECT SECTION
   void setOnSearch(bool onSearch) {
     final loadingState = state.pagingState.copyWith(isLoading: onSearch, error: null);
     emit(state.copyWith(onSearch: onSearch, pagingState: loadingState));
@@ -61,6 +90,7 @@ class BookCubit extends Cubit<BookState> {
       keys: null,
       hasNextPage: true,
       isLoading: true,
+      //* NOTE: JIKA isLoading DI SET TRUE MAKA SAMA SAJA AKAN REFRESH, HATI_HATI DOUBLE STATE
       error: null,
     );
     emit(state.copyWith(pagingState: updatedPagingState));
@@ -91,7 +121,49 @@ class BookCubit extends Cubit<BookState> {
       final updatedPagingState = state.pagingState.copyWith(
         pages: [...?state.pagingState.pages, newItems],
         keys: [...?state.pagingState.keys, newKey],
-        hasNextPage: newItems.isNotEmpty,
+        hasNextPage: newItems.isNotEmpty && newItems.length > 10,
+        isLoading: false,
+      );
+
+      emit(state.copyWith(pagingState: updatedPagingState));
+
+      return results.books;
+    } on ApiException catch (e) {
+      final errorState = state.pagingState.copyWith(error: e.message, isLoading: false);
+      emit(state.copyWith(pagingState: errorState));
+
+      rethrow;
+    } on RepositoryException catch (e) {
+      final errorState = state.pagingState.copyWith(error: e.message, isLoading: false);
+      emit(state.copyWith(pagingState: errorState));
+
+      rethrow;
+    } catch (e) {
+      final errorState = state.pagingState.copyWith(error: e.toString(), isLoading: false);
+      emit(state.copyWith(pagingState: errorState));
+
+      rethrow;
+    }
+  }
+  Future<List<SimpleBookEntity>> fetchFavoriteBookPagination(int pageKey) async {
+    try {
+      final loadingState = state.pagingState.copyWith(isLoading: true, error: null);
+      emit(state.copyWith(pagingState: loadingState));
+
+      final int newKey = (state.pagingState.keys?.isEmpty ?? true) ? 1 : (state.pagingState.keys?.last ?? 0) + 1;
+
+      final newQuery = BookQuery(
+        generic: 'a',
+        startIndex: (newKey - 1) * 10,
+      );
+
+      final results = await repo.getWishlistBook(newQuery);
+      final newItems = results.books;
+
+      final updatedPagingState = state.pagingState.copyWith(
+        pages: [...?state.pagingState.pages, newItems],
+        keys: [...?state.pagingState.keys, newKey],
+        hasNextPage: newItems.isNotEmpty && newItems.length > 10,
         isLoading: false,
       );
 

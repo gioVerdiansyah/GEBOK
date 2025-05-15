@@ -1,4 +1,6 @@
 import 'package:animations/animations.dart';
+import 'package:book_shelf/src/core/system/auth_local.dart';
+import 'package:book_shelf/src/core/system/book_local.dart';
 import 'package:book_shelf/src/features/books/domain/entities/book_entity.dart';
 import 'package:book_shelf/src/features/books/presentations/widgets/screen/search_screen.dart';
 import 'package:book_shelf/src/shared/widgets/others/expandable_content.dart';
@@ -13,6 +15,7 @@ import '../../../../../shared/utils/string_util.dart';
 import '../../../../../shared/widgets/loading/image_load.dart';
 import '../../../../../shared/widgets/others/dynamic_app_bar.dart';
 import '../../../../../shared/widgets/others/expandable_description.dart';
+import '../../../../../shared/widgets/others/media_overlay.dart';
 import '../../blocs/bloc/book_cubit.dart';
 import '../../blocs/state/book_state.dart';
 
@@ -26,6 +29,16 @@ class BookDetailScreen extends StatefulWidget {
 }
 
 class _BookDetailView extends State<BookDetailScreen> {
+  final AuthLocal _authLocal = AuthLocal();
+  final BooksLocal _booksLocal = BooksLocal();
+  late bool isWishlist;
+
+  @override
+  void initState() {
+    super.initState();
+    isWishlist = _booksLocal.isInWishlist(widget.bookId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -37,9 +50,7 @@ class _BookDetailView extends State<BookDetailScreen> {
       child: BlocBuilder<BookCubit, BookState>(
         builder: (context, state) {
           if (state.api.isLoading) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
           }
 
           return Scaffold(
@@ -54,26 +65,64 @@ class _BookDetailView extends State<BookDetailScreen> {
                       transitionType: ContainerTransitionType.fadeThrough,
                       transitionDuration: const Duration(milliseconds: 600),
                       closedElevation: 0,
-                      closedShape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20)),
+                      closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       closedBuilder: (context, openContainer) {
                         return IconButton(
-                          icon: const Icon(Icons.search,
-                              color: ColorConstant.gray),
+                          icon: const Icon(Icons.search, color: ColorConstant.gray),
                           onPressed: openContainer,
                         );
                       },
                       openBuilder: (context, _) => const SearchScreen(),
                     ),
-                    IconButton(
-                      onPressed: () {
-                        final params = ShareParams(uri: Uri.parse(state.book.canonicalVolumeLink));
+                    if (_authLocal.getLoginType() == "google")
+                      PopupMenuButton<String>(
+                        offset: Offset(0, 60),
+                        color: ColorConstant.secondary,
+                        tooltip: "Menu",
+                        onSelected: (val) async {
+                          if (val == "wishlist") {
+                            if(!isWishlist){
+                              context.read<BookCubit>().addBookToWishlist(state.book.id);
+                            }else{
+                              context.read<BookCubit>().removeBookFromWishlist(state.book.id);
+                            }
+                            setState(() {
+                              isWishlist = !isWishlist;
+                            });
+                          } else if (val == "share") {
+                            final params = ShareParams(uri: Uri.parse(state.book.canonicalVolumeLink));
+                            SharePlus.instance.share(params);
+                          }
+                        },
+                        itemBuilder:
+                            (BuildContext context) => <PopupMenuEntry<String>>[
+                              PopupMenuItem<String>(
+                                value: 'wishlist',
+                                child: Row(
+                                  children: !isWishlist ? [
+                                    Icon(Icons.bookmark_add_sharp),
+                                    SizedBox(width: 4), Text('Wishlist')
+                                  ] : [
+                                    Icon(Icons.bookmark_remove_outlined),
+                                    SizedBox(width: 4), Text('Hapus wishlist')
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'share',
+                                child: Row(children: [Icon(Icons.share_outlined), SizedBox(width: 4), Text('Share')]),
+                              ),
+                            ],
+                      ),
+                    if (_authLocal.getLoginType() == "guest")
+                      IconButton(
+                        onPressed: () {
+                          final params = ShareParams(uri: Uri.parse(state.book.canonicalVolumeLink));
 
-                        SharePlus.instance.share(params);
-                      },
-                      icon: const Icon(Icons.share_outlined,
-                          color: ColorConstant.gray, size: 24),
-                    ),
+                          SharePlus.instance.share(params);
+                        },
+                        icon: const Icon(Icons.share_outlined, color: ColorConstant.gray, size: 24),
+                      ),
                   ],
                 ),
               ],
@@ -100,7 +149,6 @@ class _BookDetailView extends State<BookDetailScreen> {
     );
   }
 
-
   Widget _buildStats(BuildContext context, BookState state) {
     final BookEntity book = state.book;
 
@@ -111,8 +159,8 @@ class _BookDetailView extends State<BookDetailScreen> {
         children: [
           // Rating
           ...[
-            if (book.ratingsCount != null)
-              ...[Column(
+            if (book.ratingsCount != null) ...[
+              Column(
                 children: [
                   Row(
                     children: [
@@ -132,7 +180,8 @@ class _BookDetailView extends State<BookDetailScreen> {
                   ),
                 ],
               ),
-            Container(margin: const EdgeInsets.symmetric(horizontal: 16), height: 40, width: 1, color: Colors.grey),]
+              Container(margin: const EdgeInsets.symmetric(horizontal: 16), height: 40, width: 1, color: Colors.grey),
+            ],
           ],
           // Format
           Column(
@@ -169,9 +218,14 @@ class _BookDetailView extends State<BookDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Book cover image
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: shimmerImage(book.imageLinks.thumbnail, width: 100, height: 150),
+        GestureDetector(
+          onTap: () {
+            MediaOverlay.show(context, url: book.imageLinks.largeImage, title: book.title, fileName: book.id);
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: shimmerImage(book.imageLinks.thumbnail, width: 100, height: 150),
+          ),
         ),
         const SizedBox(width: 16),
         // Book details
@@ -197,13 +251,10 @@ class _BookDetailView extends State<BookDetailScreen> {
               if (book.originalPrice != null)
                 Text(
                   "${book.currencyCode} ${formatNumToIdr(book.originalPrice!)}",
-                  style: const TextStyle(fontSize: 12, decoration: TextDecoration.lineThrough,),
+                  style: const TextStyle(fontSize: 12, decoration: TextDecoration.lineThrough),
                 ),
               if (book.discountPrice != null) ...[
-                Text(
-                    "${book.currencyCode} ${formatNumToIdr(book.discountPrice!)}",
-                    style: const TextStyle(fontSize: 12)
-                ),
+                Text("${book.currencyCode} ${formatNumToIdr(book.discountPrice!)}", style: const TextStyle(fontSize: 12)),
                 const SizedBox(width: 4),
               ],
               const SizedBox(height: 16),
