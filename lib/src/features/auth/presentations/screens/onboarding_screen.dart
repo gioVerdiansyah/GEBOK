@@ -52,7 +52,7 @@ class _DashboardView extends State<OnboardingScreen> {
       final token = _authLocal.getToken();
 
       if (token == null) {
-        await Future.delayed(const Duration(seconds: 2));
+        await Future.delayed(const Duration(seconds: 50));
         if (!mounted) return;
 
         if (_authLocal.getLoginType() != null && _authLocal.getLoginType() == "guest") return _navigateToGuestDashboard();
